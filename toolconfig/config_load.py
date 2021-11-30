@@ -1,7 +1,6 @@
 import copy
 import os
 
-import yaml
 import toolcache
 
 
@@ -30,8 +29,7 @@ def get_config(
     if config_path is not None:
         if not os.path.isfile(config_path):
             raise Exception('config file does not exist: ' + str(config_path))
-        with open(config_path, 'r') as f:
-            config = yaml.load(f, Loader=yaml.CLoader)
+        config = load_file(config_path)
 
     # check if config required
     if config_required and config is None:
@@ -60,4 +58,18 @@ def get_config(
             raise Exception('unknown keys in config: ' + str(extra_keys))
 
     return config
+
+
+def load_file(config_path):
+    with open(config_path, 'r') as f:
+        if config_path.endwith('.json'):
+            import json
+
+            return json.load(f)
+        elif config_path.endswith('.yaml'):
+            import yaml
+
+            return yaml.load(f, Loader=yaml.CLoader)
+        else:
+            raise Exception('unknown config format')
 
