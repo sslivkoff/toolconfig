@@ -4,6 +4,22 @@ import os
 import toolcache
 
 
+def get_config_path(config_path=None, config_path_env_var=None):
+    if config_path is not None:
+        return config_path
+
+    elif config_path_env_var is not None and config_path_env_var in os.environ:
+        config_path = os.environ[config_path_env_var]
+        if config_path == '' or config_path is None:
+            raise Exception(
+                'ENV variable ' + config_path_env_var + ' is invalid value'
+            )
+        return config_path
+
+    else:
+        return None
+
+
 @toolcache.cache(cachetype='memory')
 def get_config(
     config_path_env_var=None,
@@ -15,14 +31,10 @@ def get_config(
 ):
 
     # get config path
-    if (
-        config_path is None
-        and config_path_env_var is not None
-        and config_path_env_var in os.environ
-    ):
-        config_path = os.environ[config_path_env_var]
-        if config_path == '' or config_path is None:
-            raise Exception(config_path_env_var + ' is invalid value')
+    config_path = get_config_path(
+        config_path=config_path,
+        config_path_env_var=config_path_env_var,
+    )
 
     # load config
     config = None
@@ -62,7 +74,7 @@ def get_config(
 
 def load_file(config_path):
     with open(config_path, 'r') as f:
-        if config_path.endwith('.json'):
+        if config_path.endswith('.json'):
             import json
 
             return json.load(f)
