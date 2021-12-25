@@ -1,33 +1,72 @@
 import copy
 import os
+import typing
+import warnings
 
 import toolcache
 
+from . import toolbox
 
-def get_config_path(config_path=None, config_path_env_var=None):
-    if config_path is not None:
-        return config_path
 
-    elif config_path_env_var is not None and config_path_env_var in os.environ:
-        config_path = os.environ[config_path_env_var]
-        if config_path == '' or config_path is None:
-            raise Exception(
-                'ENV variable ' + config_path_env_var + ' is invalid value'
-            )
-        return config_path
+ConfigSpec = dict
 
-    else:
-        return None
+
+def env_var_to_config_path(config_path_env_var: str) -> typing.Optional[str]:
+    return os.environ.get(config_path_env_var)
+
+
+def config_path_is_set(
+    *,
+    config_path: typing.Optional[str] = None,
+    config_path_env_var: typing.Optional[str] = None,
+) -> bool:
+
+    if config_path_env_var is not None:
+        config_path = env_var_to_config_path(config_path_env_var)
+
+    return config_path not in [None, '']
+
+
+def config_path_exists(
+    *,
+    config_path: typing.Optional[str] = None,
+    config_path_env_var: typing.Optional[str] = None,
+) -> bool:
+
+    if config_path_env_var is not None:
+        config_path = env_var_to_config_path(config_path_env_var)
+
+    return config_path is not None and os.path.isfile(config_path)
+
+
+def get_config_path(
+    *,
+    config_path: typing.Optional[str] = None,
+    config_path_env_var: typing.Optional[str] = None,
+    raise_if_unset: bool = True,
+    raise_if_dne: bool = True,
+) -> typing.Optional[str]:
+
+    if config_path_env_var is not None:
+        config_path = env_var_to_config_path(config_path_env_var)
+
+    if raise_if_unset and not config_path_is_set(config_path=config_path):
+        raise Exception('path is not set')
+    if raise_if_dne and not config_path_exists(config_path=config_path):
+        raise Exception('path does not exist')
+
+    return config_path
 
 
 @toolcache.cache(cachetype='memory')
 def get_config(
-    config_path_env_var=None,
-    config_path=None,
-    config_spec=None,
-    default_config_values=None,
-    config_required=False,
-    config_key_variables=None,
+    config_path_env_var: typing.Optional[str] = None,
+    config_path: typing.Optional[str] = None,
+    config_spec: typing.Optional[ConfigSpec] = None,
+    default_config_values: typing.Optional[dict] = None,
+    config_required: bool = False,
+    config_key_variables: typing.Optional[dict] = None,
+    validate: typing.Literal['raise', 'warn', False] = False,
 ):
 
     # get config path
@@ -46,8 +85,8 @@ def get_config(
     # check if config required
     if config_required and config is None:
         raise Exception(
-            'config required, put config in path in environment variable '
-            + config_path_env_var
+            'must specify config, might need to set environment variable '
+            + str(config_path_env_var)
         )
 
     # set defaults
@@ -64,11 +103,13 @@ def get_config(
             config[key] = config[key].format(**config)
 
     # validate spec
-    if config_spec is not None:
-        extra_keys = set(config.keys()) - set(config_spec.keys())
-        if len(extra_keys) > 0:
-            raise Exception('unknown keys in config: ' + str(extra_keys))
-
+    if validate:
+        if config_spec is None:
+            raise Exception('cannot validate unless config_spec is given')
+        else:
+            validate_config(
+                config=config, config_spec=config_spec, validate=validate
+            )
     return config
 
 
@@ -84,4 +125,26 @@ def load_file(config_path):
             return yaml.load(f, Loader=yaml.CLoader)
         else:
             raise Exception('unknown config format')
+
+
+def validate_config(
+    config: dict,
+    config_spec: ConfigSpec,
+    validate: typing.Literal['raise', 'warn', False],
+):
+
+    if not validate:
+        return None
+
+    # determine whether config conforms to spec
+    is_valid = toolbox.conforms_to_spec(data=config, spec=config_spec)
+
+    # perform action if not vaild
+    if not is_valid:
+        if validate == 'raise':
+            raise ValueError('config does not conform to spec')
+        elif validate == 'warn':
+            warnings.warn('config does not conform to spec')
+        else:
+            raise Exception('unknown validate action: ' + str(validate))
 
