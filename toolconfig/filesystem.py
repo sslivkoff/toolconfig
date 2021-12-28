@@ -67,6 +67,10 @@ def load_file(config_path):
             import json
 
             return json.load(f)
+        elif config_path.endswith('.toml'):
+            import toml
+
+            return toml.load(f)
         elif config_path.endswith('.yaml'):
             import yaml
 
