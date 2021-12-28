@@ -22,10 +22,13 @@ def config_path_exists(
     *,
     config_path: typing.Optional[str] = None,
     config_path_env_var: typing.Optional[str] = None,
+    default_config_path: typing.Optional[str] = None,
 ) -> bool:
 
     if config_path_env_var is not None:
         config_path = env_var_to_config_path(config_path_env_var)
+    elif config_path is None and default_config_path is not None:
+        config_path = default_config_path
 
     return config_path is not None and os.path.isfile(config_path)
 
@@ -34,6 +37,7 @@ def get_config_path(
     *,
     config_path: typing.Optional[str] = None,
     config_path_env_var: typing.Optional[str] = None,
+    default_config_path: typing.Optional[str] = None,
     raise_if_unset: bool = True,
     raise_if_dne: bool = True,
 ) -> typing.Optional[str]:
@@ -45,6 +49,8 @@ def get_config_path(
     # get config_path from environmental variable
     if config_path_env_var is not None:
         config_path = env_var_to_config_path(config_path_env_var)
+    elif config_path is None and default_config_path is not None:
+        config_path = default_config_path
 
     # validate config_path
     if raise_if_unset and not config_path_is_set(config_path=config_path):

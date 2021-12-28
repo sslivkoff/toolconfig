@@ -13,6 +13,7 @@ from . import validation
 def get_config(
     config_path_env_var: typing.Optional[str] = None,
     config_path: typing.Optional[str] = None,
+    default_config_path: typing.Optional[str] = None,
     config_spec: typing.Optional[spec.ConfigSpec] = None,
     default_config_values: typing.Optional[dict] = None,
     config_required: bool = False,
@@ -24,6 +25,7 @@ def get_config(
     config_path = filesystem.get_config_path(
         config_path=config_path,
         config_path_env_var=config_path_env_var,
+        default_config_path=default_config_path,
     )
 
     # load config
