@@ -1,0 +1,2 @@
+ConfigSpec = dict
+

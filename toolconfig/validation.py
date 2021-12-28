@@ -1,4 +1,31 @@
+import typing
+import warnings
+
 import pydantic
+
+from . import spec
+
+
+def validate_config(
+    config: dict,
+    config_spec: spec.ConfigSpec,
+    validate: typing.Literal['raise', 'warn', False],
+):
+
+    if not validate:
+        return None
+
+    # determine whether config conforms to spec
+    is_valid = conforms_to_spec(data=config, spec=config_spec)
+
+    # perform action if not vaild
+    if not is_valid:
+        if validate == 'raise':
+            raise ValueError('config does not conform to spec')
+        elif validate == 'warn':
+            warnings.warn('config does not conform to spec')
+        else:
+            raise Exception('unknown validate action: ' + str(validate))
 
 
 def conforms_to_spec(data: dict, spec: dict) -> bool:
