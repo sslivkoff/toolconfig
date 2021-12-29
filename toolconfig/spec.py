@@ -5,6 +5,7 @@ ConfigSpec = dict
 ConfigData = typing.MutableMapping[str, typing.Any]
 
 ValidationOption = typing.Literal['raise', 'warn', False]
+OverwriteOption = typing.Literal[True, False, 'prompt']
 
 
 class GetConfigKwargs(typing.TypedDict, total=False):

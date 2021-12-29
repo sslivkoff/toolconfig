@@ -79,11 +79,29 @@ def config_is_valid(**kwargs) -> bool:
 
 
 def write_config_file(
-    config_data: spec.ConfigData, path: str, overwrite: bool = False
+    config_data: spec.ConfigData,
+    path: str,
+    overwrite: spec.OverwriteOption = False,
+    style: typing.Optional[str] = None,
 ) -> None:
 
-    if os.path.isfile(path) and not overwrite:
-        raise Exception('use overwrite=True to overwrite an existing file')
+    if os.path.isfile(path):
+        if overwrite is True:
+            pass
+        elif overwrite is False:
+            raise Exception('use overwrite=True to overwrite an existing file')
+        elif overwrite == 'prompt':
+            import toolcli
+
+            if not toolcli.input_yes_or_no(
+                prompt='File already exists: '
+                + str(path)
+                + '\n\nOverwrite file?\n',
+                style=style,
+            ):
+                raise Exception('must overwrite file to proceed')
+        else:
+            raise Exception('unknown value for overwrite: ' + str(overwrite))
 
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)
