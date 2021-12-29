@@ -17,9 +17,9 @@ def get_config(
     config_spec: typing.Optional[spec.ConfigSpec] = None,
     default_config_values: typing.Optional[dict] = None,
     config_required: bool = False,
-    config_key_variables: typing.Optional[dict] = None,
-    validate: typing.Literal['raise', 'warn', False] = False,
-):
+    config_variables: typing.Optional[dict[str, typing.Mapping]] = None,
+    validate: typing.Literal['raise', 'warn', False] = 'raise',
+) -> spec.ConfigData:
 
     # get config path
     config_path = filesystem.get_config_path(
@@ -33,7 +33,7 @@ def get_config(
     if config_path is not None:
         if not os.path.isfile(config_path):
             raise Exception('config file does not exist: ' + str(config_path))
-        config = filesystem.load_file(config_path)
+        config = load_config_file(config_path)
 
     # check if config required
     if config_required and config is None:
@@ -51,9 +51,9 @@ def get_config(
         config.setdefault(key, value)
 
     # populate variables
-    if config_key_variables is not None:
-        for key, variables in config_key_variables.items():
-            config[key] = config[key].format(**config)
+    if config_variables is not None:
+        for key, variables in config_variables.items():
+            config[key] = config[key].format(**variables)
 
     # validate spec
     if validate:
@@ -67,4 +67,55 @@ def get_config(
             )
 
     return config
+
+
+# for typing see https://github.com/python/mypy/issues/4441
+def config_is_valid(**kwargs) -> bool:
+    try:
+        get_config(validate='raise', **kwargs)
+        return True
+    except ValueError:
+        return False
+
+
+def write_config_file(
+    config_data: spec.ConfigData, path: str, overwrite: bool = False
+) -> None:
+
+    if os.path.isfile(path) and not overwrite:
+        raise Exception('use overwrite=True to overwrite an existing file')
+
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+
+    if path.endswith('.json'):
+        import json
+
+        with open(path, 'w') as f:
+            json.dump(config_data, f)
+    elif path.endswith('.toml'):
+        import toml
+
+        with open(path, 'w') as f:
+            toml.dump(config_data, f)
+    else:
+        raise Exception('unknown file type: ' + str(path))
+
+
+def load_config_file(config_path: str) -> spec.ConfigData:
+    with open(config_path, 'r') as f:
+        if config_path.endswith('.json'):
+            import json
+
+            return json.load(f)
+        elif config_path.endswith('.toml'):
+            import toml
+
+            return toml.load(f)
+        elif config_path.endswith('.yaml'):
+            import yaml
+
+            return yaml.load(f, Loader=yaml.CLoader)
+        else:
+            raise Exception('unknown config format')
 
