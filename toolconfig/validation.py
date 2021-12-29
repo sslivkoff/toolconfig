@@ -7,9 +7,9 @@ from . import spec
 
 
 def validate_config(
-    config: dict,
+    config: typing.MutableMapping[str, typing.Any],
     config_spec: spec.ConfigSpec,
-    validate: typing.Literal['raise', 'warn', False],
+    validate: spec.ValidationOption,
 ):
 
     if not validate:
@@ -28,7 +28,7 @@ def validate_config(
             raise Exception('unknown validate action: ' + str(validate))
 
 
-def conforms_to_spec(data: dict, spec: dict) -> bool:
+def conforms_to_spec(data: typing.MutableMapping[str, typing.Any], spec: dict) -> bool:
 
     # check using pydantic
     if hasattr(spec, '__annotations__') and hasattr(spec, '__name__'):
