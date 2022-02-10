@@ -50,7 +50,7 @@ def conforms_to_spec(
                 import pydantic
 
                 mode = 'pydantic'
-            except ImportError:
+            except (ImportError, AttributeError):
                 mode = 'dict'
         mode = 'dict'
 
