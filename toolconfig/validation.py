@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import typing
 import warnings
 
-import pydantic
+
+if typing.TYPE_CHECKING:
+    import pydantic
+
 
 from . import spec
 
 
 def validate_config(
     config: typing.MutableMapping[str, typing.Any],
-    config_spec: spec.ConfigSpec,
+    config_spec: typing.Type,
     validate: spec.ValidationOption,
 ):
 
@@ -28,16 +33,70 @@ def validate_config(
             raise Exception('unknown validate action: ' + str(validate))
 
 
-def conforms_to_spec(data: typing.MutableMapping[str, typing.Any], spec: dict) -> bool:
+def conforms_to_spec(
+    data: typing.MutableMapping[str, typing.Any], spec: typing.Type
+) -> bool:
 
-    # check using pydantic
+    # check TypedDict
     if hasattr(spec, '__annotations__') and hasattr(spec, '__name__'):
-        pydantic_model = typed_dict_to_pydantic_model(typed_dict=spec)
+
+        # determine validation mode
         try:
-            pydantic_model(**data)
-            return True
-        except pydantic.ValidationError:
-            return False
+            import typic
+
+            mode = 'typic'
+        except ImportError:
+            try:
+                import pydantic
+
+                mode = 'pydantic'
+            except ImportError:
+                mode = 'dict'
+        mode = 'dict'
+
+        # validate
+        if mode == 'typic':
+            import typic
+
+            try:
+                typic.validate(spec, data)
+                return True
+            except typic.ConstraintValueError:
+                return False
+
+        elif mode == 'pydantic':
+            import pydantic
+
+            pydantic_model = typed_dict_to_pydantic_model(typed_dict=spec)
+            try:
+                pydantic_model(**data)
+                return True
+            except pydantic.ValidationError:
+                return False
+
+        elif mode == 'beartype':
+            import beartype
+
+            @beartype.beartype
+            def validate_data(data: spec):
+                return None
+
+            try:
+                validate_data(data)
+                return True
+            except beartype.roar.BeartypeException:
+                return False
+
+        elif mode == 'dict':
+
+            if not isinstance(data, dict):
+                return False
+            spec_keys = set(spec.__annotations__.keys())
+            actual_keys = set(data.keys())
+            return spec_keys == actual_keys
+
+        else:
+            raise Exception('unknown validation mode: ' + str(mode))
 
     # check that keys match
     elif isinstance(spec, dict):
@@ -49,8 +108,10 @@ def conforms_to_spec(data: typing.MutableMapping[str, typing.Any], spec: dict) -
 
 
 def typed_dict_to_pydantic_model(
-    typed_dict: dict,
+    typed_dict: typing.Type,
 ) -> pydantic.main.ModelMetaclass:
+
+    import pydantic
 
     if not hasattr(typed_dict, '__annotations__') or not hasattr(
         typed_dict, '__name__'

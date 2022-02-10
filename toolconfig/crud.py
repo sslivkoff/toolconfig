@@ -14,7 +14,7 @@ def get_config(
     config_path_env_var: typing.Optional[str] = None,
     config_path: typing.Optional[str] = None,
     default_config_path: typing.Optional[str] = None,
-    config_spec: typing.Optional[spec.ConfigSpec] = None,
+    config_spec: typing.Optional[typing.Type] = None,
     default_config_values: typing.Optional[dict] = None,
     config_required: bool = False,
     config_variables: typing.Optional[dict[str, typing.Mapping]] = None,
