@@ -2,12 +2,11 @@ import setuptools
 
 
 setuptools.setup(
-    name='toolconfig',
-    version='0.0.1',
+    name='toolconf',
+    version='0.0.2',
     packages=['toolconfig'],
     install_requires=[
         'pyyaml',
-        'pydantic',
     ],
 )
 
