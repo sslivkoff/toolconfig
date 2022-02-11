@@ -78,7 +78,7 @@ def conforms_to_spec(
             import beartype
 
             @beartype.beartype
-            def validate_data(data: spec):
+            def validate_data(data: spec):  # type: ignore
                 return None
 
             try:
