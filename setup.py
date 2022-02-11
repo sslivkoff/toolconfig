@@ -7,6 +7,7 @@ setuptools.setup(
     packages=['toolconfig'],
     install_requires=[
         'pyyaml',
+        'typing_extensions',
     ],
 )
 
