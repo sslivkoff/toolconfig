@@ -133,9 +133,13 @@ def load_config_file(config_path: str) -> spec.ConfigData:
 
             return toml.load(f)
         elif config_path.endswith('.yaml'):
-            import yaml
+            try:
+                import yaml
+            except ImportError:
+                raise Exception(
+                    'pyyaml required for yaml files, install using `pip install pyyaml`'
+                )
 
             return yaml.load(f, Loader=yaml.CLoader)
         else:
             raise Exception('unknown config format')
-
