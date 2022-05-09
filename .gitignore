@@ -5,5 +5,3 @@ build/
 dist/
 notebooks/
 future/
-pyproject.toml
-
