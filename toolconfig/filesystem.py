@@ -51,4 +51,3 @@ def get_config_path(
             )
 
     return config_path
-
